@@ -1,4 +1,5 @@
 
+import org.junit.jupiter.params.provider.CsvFileSource;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import io.github.bonigarcia.wdm.WebDriverManager;
@@ -153,6 +154,51 @@ public class LoginTest {
             );
         }
     }
+
+    @Order(4)
+    @ParameterizedTest(name = "CSV [{index}]: {0} / {1} -> {2}")
+    @CsvFileSource(resources = "/login-data.csv", numLinesToSkip = 1)
+    @DisplayName("Login with data from external CSV file")
+    void testLoginWithCSV(String username, String password, String expectedResult) {
+
+        driver.get("https://the-internet.herokuapp.com/login");
+
+        // Xu ly du lieu rong va khoang trang
+        username = (username == null) ? "" : username.trim();
+        password = (password == null) ? "" : password.trim();
+
+        // Nhap username va password
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+
+        // Nhan Login
+        driver.findElement(
+                By.cssSelector("button[type='submit']")
+        ).click();
+
+        // Chon thong bao can kiem tra
+        By messageLocator = expectedResult.equals("success")
+                ? By.cssSelector(".flash.success")
+                : By.cssSelector(".flash.error");
+
+        WebElement message = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(messageLocator)
+        );
+
+        // Kiem tra ket qua
+        if (expectedResult.equals("success")) {
+            assertTrue(
+                    message.getText().contains("You logged into a secure area!"),
+                    "Khong thay thong bao dang nhap thanh cong"
+            );
+        } else {
+            assertTrue(
+                    message.getText().toLowerCase().contains("invalid"),
+                    "Khong thay thong bao dang nhap that bai"
+            );
+        }
+    }
+
 
 
     @AfterAll
